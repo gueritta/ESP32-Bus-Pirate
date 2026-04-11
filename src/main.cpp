@@ -233,9 +233,8 @@ void setup() {
             TembedTerminalView standaloneView(deviceView.getScreen());
             TembedInput standaloneInput;
             standaloneView.initialize();
-            // Note: In standalone mode, deviceView is used by DependencyProvider (for commands like sniff, trace etc).
-            // TembedDeviceView already initialized its screen in the early setup.
-            S3DevKitInput secondaryInput; // placeholder or secondary if needed
+
+            S3DevKitInput secondaryInput; // placeholder/fallback input for DependencyProvider
 
             DependencyProvider* provider = new DependencyProvider(standaloneView, deviceView, standaloneInput, secondaryInput,
                                                                   littleFsService);
