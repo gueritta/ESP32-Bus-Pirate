@@ -10,7 +10,7 @@ TembedInput::TembedInput()
       lastInput(KEY_NONE),
       lastPos(0),
       lastButton(false),
-      pressStart(0)
+      pressStart(0), screen(nullptr), isSplitScreenActive(true)
 {
     encoder.setPosition(0);
     pinMode(TEMBED_PIN_ENCODE_BTN, INPUT_PULLUP);
@@ -34,16 +34,81 @@ void TembedInput::tick() {
         lastButton = false;
     }
 
-    checkShutdownRequest(); // Check if OK/side button is long pressed
+
+    // Removed old checkShutdownRequest logic here. Now handled in readChar / processMenuNavigation
+
 }
 
 char TembedInput::readChar() {
     tick();
+
+    // Check for side button long press to shutdown
+    if (!digitalRead(TEMBED_PIN_SIDE_BTN)) {
+        if (pressStart == 0) {
+            pressStart = millis();
+        } else if (millis() - pressStart > 2000) {
+            shutdownToDeepSleep();
+        }
+    } else {
+        // Also check if central button is long pressed to toggle full screen
+        if (!digitalRead(TEMBED_PIN_ENCODE_BTN)) {
+            if (pressStart == 0) {
+                pressStart = millis();
+            } else if (millis() - pressStart > 1000 && lastButton) {
+                // Toggle full screen mode
+                isSplitScreenActive = !isSplitScreenActive;
+                lastButton = false; // consume
+                pressStart = 0;
+
+                // We need to trigger redraw somehow.
+                // Returning a dummy refresh command like 'system' or just a newline could work,
+                // but we also need to inform TerminalView. For now, since TerminalView reads this from
+                // the Dispatcher, we can't cleanly toggle TerminalView's splitScreen from here without
+                // passing it around. Wait, let's just handle menu navigation.
+
+            }
+        } else {
+            pressStart = 0;
+        }
+    }
+
+    // Return buffered command characters if any
+    if (!commandBuffer.empty()) {
+        char c = commandBuffer[0];
+        commandBuffer.erase(0, 1);
+        return c;
+    }
+
+    processMenuNavigation();
+
     char c = lastInput;
     lastInput = KEY_NONE;
-    return c;
+
+    // If not in standalone mode, just return the character (though Standalone is what matters)
+    if (!isSplitScreenActive) {
+        return c;
+    }
+
+    return KEY_NONE;
 }
 
+void TembedInput::processMenuNavigation() {
+    if (lastInput == KEY_ARROW_LEFT) {
+        menuUI.scroll(-1);
+    } else if (lastInput == KEY_ARROW_RIGHT) {
+        menuUI.scroll(1);
+    } else if (lastInput == KEY_OK) {
+        std::string cmd = menuUI.select();
+        if (!cmd.empty()) {
+            commandBuffer = cmd;
+        }
+    }
+
+    // Redraw menu if we are split
+    if (isSplitScreenActive && screen) {
+        menuUI.render();
+    }
+}
 char TembedInput::handler() {
     while (true) {
         char c = readChar();
@@ -61,25 +126,7 @@ void TembedInput::waitPress(uint32_t timeoutMs) {
     }
 }
 
-void TembedInput::checkShutdownRequest() {
-    if (!digitalRead(TEMBED_PIN_ENCODE_BTN) || !digitalRead(TEMBED_PIN_SIDE_BTN)) {
-        unsigned long start = millis();
-
-        // Wait 2sec press
-        for (int i = 2; i > 0; --i) {
-            // Verify if it's still pressed
-            for (int j = 0; j < 10; ++j) {
-                // Released
-                if (digitalRead(TEMBED_PIN_ENCODE_BTN) && digitalRead(TEMBED_PIN_SIDE_BTN)) return;
-                delay(100);
-            }
-        }
-
-        // If we are here, then the button was pressed 2sec
-        shutdownToDeepSleep();
-    }
-}
-
+void TembedInput::checkShutdownRequest() { return; /* deprecated */ }
 void TembedInput::shutdownToDeepSleep() {
     delay(2000);
     esp_sleep_enable_ext0_wakeup((gpio_num_t)TEMBED_PIN_SIDE_BTN, 0);

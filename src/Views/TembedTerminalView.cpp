@@ -15,12 +15,16 @@ TembedTerminalView::~TembedTerminalView() {
 }
 
 void TembedTerminalView::initialize() {
-    tft->fillScreen(BACKGROUND_COLOR);
+    if (isSplitScreen) {
+        tft->fillRect(0, 0, tft->width() / 2, tft->height(), BACKGROUND_COLOR);
+    } else {
+        tft->fillScreen(BACKGROUND_COLOR);
+    }
     tft->setTextColor(TEXT_COLOR, BACKGROUND_COLOR);
     tft->setTextWrap(false);
     tft->setTextSize(1);
 
-    scrW = tft->width();
+    scrW = isSplitScreen ? (tft->width() / 2) : tft->width();
     scrH = tft->height();
 
     // The T-Embed S3 CC1101 has PSRAM, we can afford a 16-bit sprite
@@ -128,8 +132,17 @@ void TembedTerminalView::waitPress() {
 }
 
 void TembedTerminalView::clear() {
-    if (spriteReady) termSprite->fillScreen(BACKGROUND_COLOR);
-    tft->fillScreen(BACKGROUND_COLOR);
+
+    if (spriteReady) {
+        termSprite->fillScreen(BACKGROUND_COLOR);
+    } else {
+        if (isSplitScreen) {
+            tft->fillRect(0, 0, scrW, scrH, BACKGROUND_COLOR);
+        } else {
+            tft->fillScreen(BACKGROUND_COLOR);
+        }
+    }
+
     u8_cp = 0; u8_rem = 0;
     history.clear();
     scrollOffset = 0;
@@ -333,7 +346,11 @@ void TembedTerminalView::renderAll() {
         termSprite->setTextColor(TEXT_COLOR, BACKGROUND_COLOR);
         termSprite->setTextSize(1);
     } else {
-        tft->fillScreen(BACKGROUND_COLOR);
+        if (isSplitScreen) {
+            tft->fillRect(0, 0, scrW, scrH, BACKGROUND_COLOR);
+        } else {
+            tft->fillScreen(BACKGROUND_COLOR);
+        }
         tft->setTextColor(TEXT_COLOR, BACKGROUND_COLOR);
         tft->setTextSize(1);
     }
@@ -537,6 +554,24 @@ std::string TembedTerminalView::htmlDecodeBasic(const std::string& s) const {
         out.push_back(ch);
     }
     return out;
+}
+
+void TembedTerminalView::setSplitScreen(bool enabled) {
+    if (isSplitScreen == enabled) return;
+    isSplitScreen = enabled;
+
+    // Reconfigure bounds and buffers
+    scrW = isSplitScreen ? (tft->width() / 2) : tft->width();
+    scrH = tft->height();
+
+    if (spriteReady) {
+        termSprite->deleteSprite();
+        spriteReady = termSprite->createSprite(scrW, scrH);
+    }
+
+    recomputeMetrics();
+    termReset();
+    renderAll();
 }
 
 #endif

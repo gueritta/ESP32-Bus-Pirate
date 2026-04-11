@@ -5,6 +5,8 @@
 #include "Interfaces/IInput.h"
 #include <RotaryEncoder.h>
 #include <Arduino.h>
+#include "Views/TembedMenuUI.h"
+#include "Enums/TerminalTypeEnum.h"
 // #include <Views/TembedDeviceView.h>
 
 #ifdef DEVICE_TEMBEDS3CC1101
@@ -20,6 +22,12 @@
 #define TEMBED_PIN_ENCODE_BTN            0
 
 class TembedInput : public IInput {
+public:
+    void setScreen(void* screen) {
+        menuUI.initialize(screen);
+        this->screen = screen;
+    }
+
 public:
     TembedInput();
 
@@ -38,6 +46,14 @@ private:
     char lastButton;
     int lastPos;
     unsigned long pressStart;
+    TembedMenuUI menuUI;
+    void* screen;
+    bool isSplitScreenActive = true;
+
+    std::string commandBuffer;
+
+    void processMenuNavigation();
+
 };
 
 #endif
