@@ -36,3 +36,9 @@ jobs:
 
       - name: Build t-embed-s3-cc1101
         run: platformio run -e t-embed-s3-cc1101
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: t-embed-s3-cc1101-firmware
+          path: .pio/build/t-embed-s3-cc1101/*.bin
