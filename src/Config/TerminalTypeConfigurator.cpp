@@ -7,7 +7,7 @@ TerminalTypeEnum TerminalTypeConfigurator::configure() {
     std::vector<std::string> options = {
         TerminalTypeEnumMapper::toString(TerminalTypeEnum::WiFiClient),
         TerminalTypeEnumMapper::toString(TerminalTypeEnum::SerialPort),
-        #ifdef DEVICE_CARDPUTER
+        #if defined(DEVICE_CARDPUTER) || defined(DEVICE_TEMBEDS3CC1101) || defined(DEVICE_TEMBEDS3CC1101PLUS)
             TerminalTypeEnumMapper::toString(TerminalTypeEnum::Standalone),
         #endif
     };

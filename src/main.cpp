@@ -8,6 +8,9 @@
 #include <Views/TdisplayDeviceView.h>
 #include <Views/CardputerTerminalView.h>
 #include <Views/CardputerDeviceView.h>
+#if defined(DEVICE_TEMBEDS3CC1101) || defined(DEVICE_TEMBEDS3CC1101PLUS)
+#include <Views/TembedTerminalView.h>
+#endif
 #include <Inputs/SerialTerminalInput.h>
 #include <Inputs/CardputerInput.h>
 #include <Inputs/StickInput.h>
@@ -209,7 +212,7 @@ void setup() {
         }
 
         #ifdef DEVICE_CARDPUTER
-        case TerminalTypeEnum::Standalone: 
+        case TerminalTypeEnum::Standalone: {
             // Cardputer all in one
             CardputerTerminalView standaloneView; // cardputer screen as terminal
             CardputerInput standaloneInput; // cardputer keyboard for command input
@@ -224,6 +227,23 @@ void setup() {
             dispatcher.setup(terminalType, "standalone");
             dispatcher.run(); // Forever
             break;
+        }
+        #elif defined(DEVICE_TEMBEDS3CC1101) || defined(DEVICE_TEMBEDS3CC1101PLUS)
+        case TerminalTypeEnum::Standalone: {
+            TembedTerminalView standaloneView(deviceView.getScreen());
+            TembedInput standaloneInput;
+            standaloneView.initialize();
+            // Note: In standalone mode, deviceView is used by DependencyProvider (for commands like sniff, trace etc).
+            // TembedDeviceView already initialized its screen in the early setup.
+            S3DevKitInput secondaryInput; // placeholder or secondary if needed
+
+            DependencyProvider* provider = new DependencyProvider(standaloneView, deviceView, standaloneInput, secondaryInput,
+                                                                  littleFsService);
+            ActionDispatcher dispatcher(*provider);
+            dispatcher.setup(terminalType, "standalone");
+            dispatcher.run(); // Forever
+            break;
+        }
         #endif
     }
 }
