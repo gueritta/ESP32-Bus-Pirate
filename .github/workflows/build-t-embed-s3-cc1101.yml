@@ -1,0 +1,38 @@
+name: Build t-embed-s3-cc1101
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'lib/**'
+      - 'partitions/**'
+      - 'platformio.ini'
+      - '.github/workflows/build-t-embed-s3-cc1101.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'lib/**'
+      - 'partitions/**'
+      - 'platformio.ini'
+      - '.github/workflows/build-t-embed-s3-cc1101.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build t-embed-s3-cc1101
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build t-embed-s3-cc1101
+        run: platformio run -e t-embed-s3-cc1101
