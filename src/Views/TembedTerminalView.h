@@ -39,6 +39,9 @@ public:
     void waitPress() override;
     void clear() override;
 
+    void setSplitScreen(bool enabled);
+    bool getSplitScreen() const { return isSplitScreen; }
+
 private:
     // Terminal emulation
     void termReset();
@@ -104,6 +107,9 @@ private:
 
     int16_t padX = 6;   // marge horizontale
     int16_t padY = 4;   // marge verticale
+
+    bool isSplitScreen = false;
+
 
     uint32_t lastRenderMs = 0;
     uint32_t frameIntervalMs = 16; // 60 FPS

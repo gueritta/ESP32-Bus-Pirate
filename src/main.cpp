@@ -230,8 +230,11 @@ void setup() {
         }
         #elif defined(DEVICE_TEMBEDS3CC1101) || defined(DEVICE_TEMBEDS3CC1101PLUS)
         case TerminalTypeEnum::Standalone: {
+
             TembedTerminalView standaloneView(deviceView.getScreen());
             TembedInput standaloneInput;
+            standaloneInput.setScreen(deviceView.getScreen());
+            standaloneView.setSplitScreen(true);
             standaloneView.initialize();
             // Note: In standalone mode, deviceView is used by DependencyProvider (for commands like sniff, trace etc).
             // TembedDeviceView already initialized its screen in the early setup.
